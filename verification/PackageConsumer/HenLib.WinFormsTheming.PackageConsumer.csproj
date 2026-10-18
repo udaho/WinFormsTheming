@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ThemingPackageVersion Condition="'$(ThemingPackageVersion)' == ''">1.0.0</ThemingPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="HenLib.WinFormsTheming" Version="$(ThemingPackageVersion)" />
+    <Compile Include="..\ConsumerSmoke\*.cs" Link="%(Filename)%(Extension)" />
+  </ItemGroup>
+</Project>

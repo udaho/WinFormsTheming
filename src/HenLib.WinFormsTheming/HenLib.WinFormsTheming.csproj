@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>HenLib.WinFormsTheming</RootNamespace>
+    <AssemblyName>HenLib.WinFormsTheming</AssemblyName>
+    <PackageId>HenLib.WinFormsTheming</PackageId>
+    <Description>Reusable WinForms theme management, native refresh, palette integration, and progress animation.</Description>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <Version>1.0.0</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
