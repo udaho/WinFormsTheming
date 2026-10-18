@@ -13,7 +13,6 @@ Applications own their saved preferences and business-state colors.
 ## Table of contents
 
 - [TLDR](#tldr)
-- [Table of contents](#table-of-contents)
 - [Use](#use)
 - [Customization](#customization)
 - [Limits](#limits)

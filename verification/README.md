@@ -13,7 +13,6 @@ Both need Windows 11, .NET 10 SDK, and an unlocked interactive desktop.
 ## Table of contents
 
 - [TLDR](#tldr)
-- [Table of contents](#table-of-contents)
 - [Automated](#automated)
 - [Human verification](#human-verification)
 
