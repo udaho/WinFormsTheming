@@ -14,11 +14,20 @@ internal static class Program
             AnimateProgressBars = !noMotion,
             ProgressBarRendering = native ? ThemeProgressBarRendering.Native : ThemeProgressBarRendering.Animated
         });
-        using Form form = args.Contains("--setup")
-            ? new SetupFixtureForm(manager)
-            : args.Contains("--gallery")
-            ? new CommonControlsForm(manager)
-            : new ProgressFixtureForm(manager, startup, noMotion, native);
+        Form form;
+        if (args.Contains("--setup"))
+        {
+            form = new SetupFixtureForm(manager);
+        }
+        else if (args.Contains("--gallery"))
+        {
+            form = new CommonControlsForm(manager);
+        }
+        else
+        {
+            form = new ProgressFixtureForm(manager, startup, noMotion, native);
+        }
+        using var formLifetime = form;
         using var registration = form is SetupFixtureForm ? null : manager.Register(form);
         Application.Run(form);
     }

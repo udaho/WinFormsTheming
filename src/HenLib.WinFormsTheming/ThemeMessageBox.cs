@@ -91,7 +91,10 @@ public static class ThemeMessageBox
             UseVisualStyleBackColor = true
         }).ToArray();
         foreach (Button button in actionButtons.Reverse())
+        {
             actions.Controls.Add(button);
+        }
+
         layout.Controls.Add(actions, 0, 1);
         layout.SetColumnSpan(actions, 2);
         dialog.Controls.Add(layout);

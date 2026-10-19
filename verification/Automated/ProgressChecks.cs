@@ -110,11 +110,14 @@ internal static class ProgressChecks
                 }
                 Check(!motion || observer.Paints > 5, "Timer did not drive real WM_PAINT messages");
                 using (var unattached = Bar("Unparented", 50))
-                using (manager.Attach(unattached))
                 {
-                    _ = unattached.Handle;
-                    Check(!Needs(unattached), "An unparented hidden HWND needs animation");
+                    using (manager.Attach(unattached))
+                    {
+                        _ = unattached.Handle;
+                        Check(!Needs(unattached), "An unparented hidden HWND needs animation");
+                    }
                 }
+
                 Check(normal.AccessibilityObject.Role == AccessibleRole.ProgressBar && normal.AccessibilityObject.Value is not null,
                     "Native progress accessibility was lost");
                 var previousContext = manager.Context;
@@ -148,12 +151,18 @@ internal static class ProgressChecks
                 }
                 normal.Minimum = normal.Maximum = normal.Value = 100;
                 using (var image = Capture(normal))
+                {
                     Check(image.GetPixel(100, 10).ToArgb() == normal.BackColor.ToArgb(), "Zero-length range is not empty");
+                }
+
                 normal.Minimum = 0;
                 normal.Maximum = int.MaxValue;
                 normal.Value = int.MaxValue / 2;
                 using (var image = Capture(normal))
+                {
                     Check(image.GetPixel(350, 10).ToArgb() == normal.BackColor.ToArgb(), "Large range overflowed");
+                }
+
                 normal.Minimum = 0;
                 normal.Maximum = 100;
                 normal.Value = 65;
@@ -168,13 +177,22 @@ internal static class ProgressChecks
                 SendMessage(normal.Handle, 0x402, 60, 0);
                 SendMessage(normal.Handle, 0x409, 0, ColorTranslator.ToWin32(Color.Orange));
                 using (var image = Capture(normal))
+                {
                     Check(image.GetPixel(100, 10).R > 200, "Direct native fill color was ignored");
+                }
+
                 SendMessage(normal.Handle, 0x2001, 0, ColorTranslator.ToWin32(Color.Pink));
                 using (var image = Capture(normal))
+                {
                     Check(image.GetPixel(490, 10).ToArgb() == Color.Pink.ToArgb(), "Direct native track color was ignored");
+                }
+
                 manager.Refresh();
                 using (var image = Capture(normal))
+                {
                     Check(image.GetPixel(490, 10).ToArgb() == normal.BackColor.ToArgb(), "Theme refresh did not restore property track color");
+                }
+
                 normal.Maximum = 101;
                 normal.Maximum = 100;
                 normal.Value = 66;
@@ -185,7 +203,10 @@ internal static class ProgressChecks
                     Check(image.GetPixel(10, 10).ToArgb() == rtl.BackColor.ToArgb() && image.GetPixel(480, 10).ToArgb() != rtl.BackColor.ToArgb(), "RTL fill direction is wrong");
                 }
                 foreach (ProgressBar bar in layout.Controls)
+                {
                     bar.Visible = false;
+                }
+
                 await Task.Delay(70);
                 Check(!TimerEnabled(), "Hidden bars keep timer running");
                 small.Size = new Size(1, 1);
@@ -211,7 +232,10 @@ internal static class ProgressChecks
                 marquee.MarqueeAnimationSpeed = 0;
                 Check(!TimerEnabled(), "Stopped marquee keeps timer running");
                 using (var image = Capture(marquee))
+                {
                     Check(image.GetPixel(250, 10).ToArgb() != marquee.BackColor.ToArgb(), "Static marquee segment is missing");
+                }
+
                 marquee.MarqueeAnimationSpeed = 20;
                 Check(TimerEnabled() == motion, "Marquee restart did not resume motion");
                 nint oldHandle = marquee.Handle;
@@ -239,7 +263,10 @@ internal static class ProgressChecks
                 Check(normal.Value == 30 && normal.Style == ProgressBarStyle.Blocks && marquee.MarqueeAnimationSpeed == 30,
                     "Detach changed managed semantics");
                 using (manager.Attach(form))
+                {
                     Check(Needs(marquee) == motion, "Reattachment failed");
+                }
+
                 manager.Dispose();
                 Check(ThemeManager.Current is null, "Manager still retained after disposal");
             }
@@ -251,7 +278,10 @@ internal static class ProgressChecks
             {
                 Console.WriteLine($"{startup}: checks {checks}; failures {failures.Count}");
                 foreach (string failure in failures)
+                {
                     Console.WriteLine(failure);
+                }
+
                 form.Close();
             }
         };

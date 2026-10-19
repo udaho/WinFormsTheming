@@ -42,10 +42,35 @@ internal sealed class ThemedProgressBarWindow : NativeWindow, IDisposable
 
     private int BorderWidth => Math.Max(1, (int)Math.Round(control.DeviceDpi / 96.0));
 
-    internal bool NeedsAnimation => !disposed && Handle != 0 && control.Visible && IsWindowVisible(Handle) && control.Enabled &&
-        control.ClientSize.Width > BorderWidth * 2 && control.ClientSize.Height > BorderWidth * 2 && form?.WindowState != FormWindowState.Minimized &&
-        owner.MotionEnabled && nativeState == 1 && (control.Style == ProgressBarStyle.Marquee
-            ? marqueeRunning : position > minimum && position < maximum);
+    internal bool NeedsAnimation
+    {
+        get
+        {
+            if (disposed || Handle == 0 || !control.Visible || !IsWindowVisible(Handle) || !control.Enabled)
+            {
+                return false;
+            }
+
+            int border = BorderWidth;
+            Size size = control.ClientSize;
+            if (size.Width <= border * 2 || size.Height <= border * 2 || form?.WindowState == FormWindowState.Minimized)
+            {
+                return false;
+            }
+
+            if (!owner.MotionEnabled || nativeState != 1)
+            {
+                return false;
+            }
+
+            if (control.Style == ProgressBarStyle.Marquee)
+            {
+                return marqueeRunning;
+            }
+
+            return position > minimum && position < maximum;
+        }
+    }
 
     internal void Refresh()
     {
@@ -307,12 +332,24 @@ internal sealed class ThemedProgressBarWindow : NativeWindow, IDisposable
         bool contrast = owner.Context.IsHighContrast;
         Color border = palette[ThemeColorRole.ProgressBorder];
         Color track = contrast ? SystemColors.Window : NativeColor(nativeTrack, control.BackColor);
-        Color fill = !control.Enabled ? palette.DisabledText : contrast ? SystemColors.Highlight : nativeState switch
+        Color fill;
+        if (!control.Enabled)
         {
-            2 => palette[ThemeColorRole.ProgressErrorFill],
-            3 => palette[ThemeColorRole.ProgressPausedFill],
-            _ => NativeColor(nativeFill, control.ForeColor)
-        };
+            fill = palette.DisabledText;
+        }
+        else if (contrast)
+        {
+            fill = SystemColors.Highlight;
+        }
+        else
+        {
+            fill = nativeState switch
+            {
+                2 => palette[ThemeColorRole.ProgressErrorFill],
+                3 => palette[ThemeColorRole.ProgressPausedFill],
+                _ => NativeColor(nativeFill, control.ForeColor)
+            };
+        }
         graphics.Clear(border);
         int edge = BorderWidth;
         var inside = new Rectangle(edge, edge, Math.Max(0, size.Width - edge * 2), Math.Max(0, size.Height - edge * 2));

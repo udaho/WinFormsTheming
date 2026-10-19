@@ -72,10 +72,13 @@ internal static class Program
                 themes.SetMode(startup);
                 checks.Check(themes.Revision == revision, "Same-mode request refreshed controls");
                 using (themes.Attach(host))
-                using (themes.Attach(flow))
                 {
-                    checks.Check(themes.RegisteredControlCount == registered, "Overlapping roots duplicated registrations");
+                    using (themes.Attach(flow))
+                    {
+                        checks.Check(themes.RegisteredControlCount == registered, "Overlapping roots duplicated registrations");
+                    }
                 }
+
                 checks.Check(themes.RegisteredControlCount == registered, "Overlapping-root disposal removed live registrations");
                 for (int index = 0; index < 20; index++)
                 {
@@ -159,20 +162,22 @@ internal static class Program
                 checks.Check(ThemeManager.Current is null && themes.RegisteredControlCount == 0, "Manager retained registrations after disposal");
                 checks.Check(!tips.OwnerDraw && pages.TabPages.Cast<TabPage>().All(page => page.UseVisualStyleBackColor), "Disposal did not restore original policies");
                 using (var replacement = new ThemeManager(ThemeMode.Light))
-                using (var cleanupRoot = new Form())
                 {
-                    cleanupRoot.Controls.Add(new Button());
-                    using var registration = replacement.Attach(cleanupRoot);
-                    using var adapter = replacement.AddAdapter(new ThrowingAdapter());
-                    try
+                    using (var cleanupRoot = new Form())
                     {
-                        replacement.Dispose();
-                        checks.Check(false, "Cleanup exception was not reported");
+                        cleanupRoot.Controls.Add(new Button());
+                        using var registration = replacement.Attach(cleanupRoot);
+                        using var adapter = replacement.AddAdapter(new ThrowingAdapter());
+                        try
+                        {
+                            replacement.Dispose();
+                            checks.Check(false, "Cleanup exception was not reported");
+                        }
+                        catch (AggregateException)
+                        {
+                        }
+                        checks.Check(ThemeManager.Current is null && replacement.RegisteredControlCount == 0, "Cleanup failure leaked manager state");
                     }
-                    catch (AggregateException)
-                    {
-                    }
-                    checks.Check(ThemeManager.Current is null && replacement.RegisteredControlCount == 0, "Cleanup failure leaked manager state");
                 }
             }
             catch (Exception exception)

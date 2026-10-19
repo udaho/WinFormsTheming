@@ -135,8 +135,19 @@ public sealed class ThemeManager : IDisposable
         VerifyThread();
         var reachable = new HashSet<Control>();
         Discover(root, reachable, new HashSet<ToolStripDropDownItem>());
-        return reachable.ToDictionary(control => control, control =>
-            controls.TryGetValue(control, out var state) ? state.Defaults : new ThemeControlDefaults(control));
+        var snapshots = new Dictionary<Control, ThemeControlDefaults>();
+        foreach (Control control in reachable)
+        {
+            if (controls.TryGetValue(control, out var state))
+            {
+                snapshots.Add(control, state.Defaults);
+            }
+            else
+            {
+                snapshots.Add(control, new ThemeControlDefaults(control));
+            }
+        }
+        return snapshots;
     }
 
     public IDisposable Attach(Control root) => Attach(root, null);
@@ -206,7 +217,8 @@ public sealed class ThemeManager : IDisposable
         }
         bindings[control] = binding;
         ApplyControl(controls[control], refreshPainter: false);
-        return new Registration(() =>
+
+        void RemoveBinding()
         {
             if (disposed)
             {
@@ -232,7 +244,9 @@ public sealed class ThemeManager : IDisposable
                 }
                 ApplyControl(state, refreshPainter: false);
             }
-        });
+        }
+
+        return new Registration(RemoveBinding);
     }
 
     public IDisposable AddAdapter(IThemeAdapter adapter)
@@ -376,13 +390,22 @@ public sealed class ThemeManager : IDisposable
             {
                 Revision++;
                 foreach (var state in controls.Values.ToArray())
+                {
                     ApplyControl(state, refreshPainter: true);
+                }
+
                 foreach (var toolTip in toolTips.ToArray())
+                {
                     toolTip.RefreshColors();
+                }
             }
             ThemeChanged?.Invoke(this, new(Context, Palette, Revision));
         }
-        finally { applying = false; ScheduleQueuedRefresh(); }
+        finally
+        {
+            applying = false;
+            ScheduleQueuedRefresh();
+        }
     }
 
     private void UpdateApplicationPalette()
@@ -399,7 +422,14 @@ public sealed class ThemeManager : IDisposable
         }
         Context = new(RequestedMode, Application.IsDarkModeEnabled && !highContrast, highContrast);
         // Windows contrast colors take precedence over application palette factories.
-        Palette = highContrast ? ThemePalette.Create(Context) : options.PaletteFactory?.Invoke(Context) ?? ThemePalette.Create(Context);
+        if (highContrast)
+        {
+            Palette = ThemePalette.Create(Context);
+        }
+        else
+        {
+            Palette = options.PaletteFactory?.Invoke(Context) ?? ThemePalette.Create(Context);
+        }
         progressBars?.RefreshPolicy();
     }
 
@@ -407,11 +437,13 @@ public sealed class ThemeManager : IDisposable
     {
         try
         {
-            return Registry.GetValue(@"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize",
-                "AppsUseLightTheme", 1) is int value && value == 0;
+            const string personalizeKey = @"HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize";
+            object? preference = Registry.GetValue(personalizeKey, "AppsUseLightTheme", 1);
+            return preference is int value && value == 0;
         }
         catch (Exception ex) when (ex is System.Security.SecurityException or UnauthorizedAccessException or IOException)
         {
+            System.Diagnostics.Debug.WriteLine($"Unable to read Windows app theme preference: {ex.ToString()}");
             return false;
         }
     }
@@ -487,7 +519,10 @@ public sealed class ThemeManager : IDisposable
             var reachable = new HashSet<Control>();
             var menuItems = new HashSet<ToolStripDropDownItem>();
             foreach (Control root in roots.Keys.ToArray())
+            {
                 Discover(root, reachable, menuItems);
+            }
+
             var added = new List<ControlThemeState>();
             // Capture all original properties before changing any parent color.
             foreach (Control control in reachable)
@@ -505,7 +540,10 @@ public sealed class ThemeManager : IDisposable
                 Subscribe(control);
             }
             foreach (Control control in controls.Keys.Where(c => !reachable.Contains(c)).ToArray())
+            {
                 RemoveControl(control, restore: true);
+            }
+
             foreach (var item in menuOpenHandlers.Keys.Where(i => !menuItems.Contains(i)).ToArray())
             {
                 item.DropDownOpening -= menuOpenHandlers[item];
@@ -525,9 +563,15 @@ public sealed class ThemeManager : IDisposable
             // A newly attached control may already have a painter cached under
             // an earlier mode, even though its root was not registered then.
             foreach (var state in added)
+            {
                 ApplyControl(state, refreshPainter: true);
+            }
         }
-        finally { reconciling = false; ScheduleQueuedRefresh(); }
+        finally
+        {
+            reconciling = false;
+            ScheduleQueuedRefresh();
+        }
     }
 
     private void Discover(Control control, HashSet<Control> reachable, HashSet<ToolStripDropDownItem> items)
@@ -543,7 +587,10 @@ public sealed class ThemeManager : IDisposable
             return;
         }
         foreach (Control child in control.Controls)
+        {
             Discover(child, reachable, items);
+        }
+
         if (control.ContextMenuStrip is { } menu)
         {
             Discover(menu, reachable, items);
@@ -616,7 +663,11 @@ public sealed class ThemeManager : IDisposable
             {
                 ApplyControl(state, refreshPainter: false);
             }
-            finally { applying = false; ScheduleQueuedRefresh(); }
+            finally
+            {
+                applying = false;
+                ScheduleQueuedRefresh();
+            }
         }));
     }
 
@@ -650,10 +701,12 @@ public sealed class ThemeManager : IDisposable
         }
 
         foreach (var adapter in adapters.ToArray())
+        {
             if (adapter.CanHandle(control))
             {
                 adapter.Apply(control, Context, Palette);
             }
+        }
 
         control.Invalidate();
     }
@@ -771,6 +824,7 @@ public sealed class ThemeManager : IDisposable
             TryCleanup(() => progressBars?.Detach(progress), errors);
         }
         foreach (var adapter in adapters.ToArray())
+        {
             TryCleanup(() =>
             {
                 if (!control.IsDisposed && adapter.CanHandle(control))
@@ -778,6 +832,8 @@ public sealed class ThemeManager : IDisposable
                     adapter.Detach(control);
                 }
             }, errors);
+        }
+
         if (restore && !control.IsDisposed)
         {
             TryCleanup(state.Restore, errors);
@@ -832,14 +888,23 @@ public sealed class ThemeManager : IDisposable
             registrations.Clear();
             SystemEvents.UserPreferenceChanged -= WindowsPreferencesChanged;
             foreach (var item in menuOpenHandlers)
+            {
                 item.Key.DropDownOpening -= item.Value;
+            }
+
             menuOpenHandlers.Clear();
             foreach (var tooltip in toolTips.ToArray())
+            {
                 TryCleanup(tooltip.Dispose, errors);
+            }
+
             toolTips.Clear();
             roots.Clear();
             foreach (Control control in controls.Keys.ToArray())
+            {
                 TryCleanup(() => RemoveControl(control, restore: true), errors);
+            }
+
             bindings.Clear();
             adapters.Clear();
         }
@@ -863,7 +928,10 @@ public sealed class ThemeManager : IDisposable
         {
             cleanup();
         }
-        catch (Exception error) { errors.Add(error); }
+        catch (Exception error)
+        {
+            errors.Add(error);
+        }
     }
 
     private sealed record ColorBinding(ThemeColorRole? Background, ThemeColorRole? Foreground);

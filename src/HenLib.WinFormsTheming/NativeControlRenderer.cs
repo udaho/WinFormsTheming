@@ -124,7 +124,10 @@ internal static class NativeControlRenderer
                 button.FlatStyle = original;
                 button.GetPreferredSize(new Size(12349, 23461));
             }
-            finally { parent?.ResumeLayout(performLayout: true); }
+            finally
+            {
+                parent?.ResumeLayout(performLayout: true);
+            }
         }
     }
 

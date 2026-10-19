@@ -39,10 +39,21 @@ internal sealed class ThemedToolTipRegistration : IDisposable
 
         bool dark = manager.Context.IsDark && !manager.Context.IsHighContrast;
         ToolTip.OwnerDraw = dark;
-        ToolTip.BackColor = dark ? manager.Palette.Surface
-            : manager.Context.IsHighContrast ? SystemColors.Info : originalBack;
-        ToolTip.ForeColor = dark ? manager.Palette.Text
-            : manager.Context.IsHighContrast ? SystemColors.InfoText : originalFore;
+        if (dark)
+        {
+            ToolTip.BackColor = manager.Palette.Surface;
+            ToolTip.ForeColor = manager.Palette.Text;
+        }
+        else if (manager.Context.IsHighContrast)
+        {
+            ToolTip.BackColor = SystemColors.Info;
+            ToolTip.ForeColor = SystemColors.InfoText;
+        }
+        else
+        {
+            ToolTip.BackColor = originalBack;
+            ToolTip.ForeColor = originalFore;
+        }
     }
 
     private void Popup(object? sender, PopupEventArgs e)
@@ -98,11 +109,13 @@ internal sealed class ThemedToolTipRegistration : IDisposable
             : TextRenderer.MeasureText(ToolTip.ToolTipTitle, titleFont, new Size(padding * 50 - iconSpace, 0), flags);
         int headerHeight = Math.Max(iconSize, title.Height);
         int bodyTop = padding + (headerHeight == 0 ? 0 : headerHeight + padding);
-        return new ToolTipLayout(
-            new Size(Math.Max(body.Width, title.Width + iconSpace) + padding * 2, bodyTop + body.Height + padding),
-            new Rectangle(padding, padding, iconSize, iconSize),
-            new Rectangle(padding + iconSpace, padding, title.Width, title.Height),
-            new Rectangle(padding, bodyTop, body.Width, body.Height));
+        int width = Math.Max(body.Width, title.Width + iconSpace) + padding * 2;
+        int height = bodyTop + body.Height + padding;
+        var size = new Size(width, height);
+        var iconBounds = new Rectangle(padding, padding, iconSize, iconSize);
+        var titleBounds = new Rectangle(padding + iconSpace, padding, title.Width, title.Height);
+        var bodyBounds = new Rectangle(padding, bodyTop, body.Width, body.Height);
+        return new ToolTipLayout(size, iconBounds, titleBounds, bodyBounds);
     }
 
     private Icon? GetIcon() => ToolTip.ToolTipIcon switch

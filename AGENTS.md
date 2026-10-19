@@ -132,8 +132,16 @@ For new control support or changes to drawing, refresh, or lifecycle:
 
 ## Working conventions
 
-- Preserve CRLF and existing encoding/BOMs. Use Allman braces, including single-line
-  `if` and `while` bodies.
+- Preserve CRLF and existing encoding/BOMs. Use Allman braces on their own lines
+  for all code blocks, including single-statement/empty methods, accessors, lambdas,
+  loops, `using`, `lock`, `try`, `catch`, and `finally` blocks.
+- Replace nested ternaries and long/complex expressions or returns with explicit
+  branches, guard clauses, named values, or small helpers. Preserve evaluation order
+  and short-circuit behavior; keep simple expressions concise.
+- Log/print exceptions with `ex.ToString()` and relevant operation/control/state
+  context. Never reduce diagnostic output to `Message` or another subset. Concise
+  user-facing messages require a separate full diagnostic log; formatters must not
+  silently discard exceptions.
 - Keep docs concise: TLDR and a linked TOC at the top. List sections/subsections,
   excluding the TOC itself. End each section/subsection with `↑ Top`.
   Maintain anchors; links to other Markdown files omit fragments.

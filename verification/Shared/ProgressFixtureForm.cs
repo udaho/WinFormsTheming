@@ -203,8 +203,23 @@ internal sealed class ProgressFixtureForm : Form
             fixtureClosing = true;
             restoreForm.Close();
         };
-        void UpdateTitle() => form.Text = $"Progress fixture | started {startup} | {manager.RequestedMode}" +
-            (native ? " | native" : noMotion ? " | motion disabled" : " | animated");
+        void UpdateTitle()
+        {
+            string rendering;
+            if (native)
+            {
+                rendering = "native";
+            }
+            else if (noMotion)
+            {
+                rendering = "motion disabled";
+            }
+            else
+            {
+                rendering = "animated";
+            }
+            form.Text = $"Progress fixture | started {startup} | {manager.RequestedMode} | {rendering}";
+        }
         titleChanged = (_, _) => UpdateTitle();
         manager.ThemeChanged += titleChanged;
         UpdateTitle();
