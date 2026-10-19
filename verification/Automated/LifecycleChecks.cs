@@ -151,7 +151,7 @@ internal static class LifecycleChecks
         using (var image = new Bitmap(16, 16))
         using (var button = new Button { Text = "Runtime image" })
         {
-            object state = Activator.CreateInstance(stateType, button)!;
+            object state = Activator.CreateInstance(stateType, [button, null])!;
             var nativeOptions = new ThemeOptions { ButtonRendering = ThemeButtonRendering.NativeTextButtons };
             void ApplyButton() => method.Invoke(state, [manager.Context, manager.Palette, nativeOptions, null, null]);
             ApplyButton();
@@ -187,9 +187,9 @@ internal static class LifecycleChecks
                 "Disabled-label regression did not draw any text");
         }
         using var page = new TabPage { UseVisualStyleBackColor = true };
-        object pageState = Activator.CreateInstance(stateType, page)!;
+        object pageState = Activator.CreateInstance(stateType, [page, null])!;
         using var explicitColor = new Panel { BackColor = Color.CornflowerBlue, ForeColor = Color.Red };
-        object explicitState = Activator.CreateInstance(stateType, explicitColor)!;
+        object explicitState = Activator.CreateInstance(stateType, [explicitColor, null])!;
         foreach (ThemeContext context in new[] { new ThemeContext(ThemeMode.Dark, true, false),
             new ThemeContext(ThemeMode.Dark, false, true), new ThemeContext(ThemeMode.Dark, true, false),
             new ThemeContext(ThemeMode.Light, false, false) })

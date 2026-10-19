@@ -5,9 +5,15 @@
     <PackageId>HenLib.WinFormsTheming</PackageId>
     <Description>Reusable WinForms theme management, native refresh, palette integration, and progress animation.</Description>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Authors>udaho</Authors>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/udaho/WinFormsTheming</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/udaho/WinFormsTheming</PackageProjectUrl>
     <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>
     <None Include="..\..\README.md" Pack="true" PackagePath="/" />
+    <None Include="..\..\LICENSE" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>

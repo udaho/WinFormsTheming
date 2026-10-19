@@ -45,9 +45,12 @@ internal static class Program
         submenu.DropDownItems.Add("Nested command");
         menu.Items.Add(submenu);
         input.ContextMenuStrip = menu;
-        using var hostRegistration = themes.Attach(host);
-        using var secondaryRegistration = themes.Attach(secondary);
-        using var tipRegistration = themes.AttachToolTip(tips);
+        int presentations = 0;
+        using var hostRegistration = themes.Register(host, setup => setup
+            .Include(secondary)
+            .ToolTip(tips)
+            .OnThemeChanged((_, _) => presentations++));
+        checks.Check(presentations == 1, "Registration did not apply initial presentation");
         host.Shown += async (_, _) =>
         {
             try

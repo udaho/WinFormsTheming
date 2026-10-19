@@ -80,7 +80,7 @@ internal sealed class ProgressFixtureForm : Form
         var modes = new FlowLayoutPanel { AutoSize = true, WrapContents = false, Margin = new Padding(0, 0, 0, 10) };
         foreach (ThemeMode mode in new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System })
         {
-            var button = new Button { Text = mode == ThemeMode.System ? "Follow Windows" : mode.ToString(), AutoSize = true };
+            var button = new Button { Text = mode == ThemeMode.System ? "System Mode" : mode.ToString(), AutoSize = true };
             button.Click += (_, _) => manager.SetMode(mode);
             modes.Controls.Add(button);
         }
@@ -163,7 +163,7 @@ internal sealed class ProgressFixtureForm : Form
         var hiddenModes = new FlowLayoutPanel { AutoSize = true, WrapContents = false };
         foreach (ThemeMode mode in new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System })
         {
-            var button = new Button { Text = mode == ThemeMode.System ? "Follow Windows" : mode.ToString(), AutoSize = true };
+            var button = new Button { Text = mode == ThemeMode.System ? "System Mode" : mode.ToString(), AutoSize = true };
             button.Click += (_, _) => manager.SetMode(mode);
             hiddenModes.Controls.Add(button);
         }

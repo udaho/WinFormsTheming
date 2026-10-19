@@ -18,6 +18,7 @@ internal static class Program
                 "progress" => ProgressChecks.Run(args),
                 "visibility" => VisibilityChecks.Run(args),
                 "startup" => StartupChecks.Run(args),
+                "setup" => SetupChecks.Run(args),
                 "lifecycle" => LifecycleChecks.Run(),
                 "controls" => CommonControlChecks.Run(args),
                 _ => Usage()
@@ -32,7 +33,7 @@ internal static class Program
 
     private static int Usage()
     {
-        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls");
+        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls | setup");
         Console.WriteLine("Options: --dark; progress also accepts --no-motion or --native.");
         return 2;
     }

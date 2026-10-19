@@ -1,0 +1,21 @@
+name: Issue or proposal
+description: Report a bug, request a feature, or propose another contribution.
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: Describe the issue or proposed change and relevant reproduction steps.
+    validations:
+      required: true
+  - type: textarea
+    id: ai-assistance
+    attributes:
+      label: Generative AI assistance disclosure
+      description: >-
+        State "AI assistance: None", or list EVERY provider/model used, including
+        tool/product, full model name/identifier, model family, version number,
+        variant/build, scope, and human review. Explain any "Unknown / not exposed"
+        fields. Include planning, writing, and review assistance. See CONTRIBUTING.md.
+    validations:
+      required: true

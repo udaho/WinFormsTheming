@@ -90,7 +90,7 @@ internal sealed class CommonControlsForm : Form
         var modes = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 36 };
         foreach (ThemeMode mode in new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System })
         {
-            var button = new Button { Text = mode == ThemeMode.System ? "Follow Windows" : mode.ToString(), AutoSize = true };
+            var button = new Button { Text = mode == ThemeMode.System ? "System Mode" : mode.ToString(), AutoSize = true };
             button.Click += (_, _) => manager.SetMode(mode);
             modes.Controls.Add(button);
         }

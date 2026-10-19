@@ -18,6 +18,7 @@ public sealed class ThemeManager : IDisposable
     private readonly Dictionary<Control, ControlThemeState> controls = new();
     private readonly Dictionary<Control, ColorBinding> bindings = new();
     private readonly Dictionary<ToolStripDropDownItem, EventHandler> menuOpenHandlers = new();
+    private readonly HashSet<ThemeRegistration> registrations = new();
     private readonly List<IThemeAdapter> adapters = new();
     private readonly List<ThemedToolTipRegistration> toolTips = new();
     private volatile bool applying, reconciling, disposed;
@@ -92,7 +93,55 @@ public sealed class ThemeManager : IDisposable
 
     internal void ForgetToolTip(ThemedToolTipRegistration registration) => toolTips.Remove(registration);
 
-    public IDisposable Attach(Control root)
+    /// <summary>Capture configured defaults now; Activate later after application initialization.</summary>
+    public ThemeRegistration Prepare(Control root, Action<ThemeRegistration>? configure = null)
+    {
+        VerifyRegistrationActivation();
+        ArgumentNullException.ThrowIfNull(root);
+        ObjectDisposedException.ThrowIf(root.IsDisposed, root);
+        var registration = new ThemeRegistration(this, root);
+        registrations.Add(registration);
+        try
+        {
+            configure?.Invoke(registration);
+            return registration;
+        }
+        catch (Exception error)
+        {
+            try
+            {
+                registration.Dispose();
+            }
+            catch (Exception cleanup)
+            {
+                throw new AggregateException("Theme configuration and cleanup failed.", error, cleanup);
+            }
+            throw;
+        }
+    }
+
+    /// <summary>Capture defaults, attach resources, and run initial presentation in one call.</summary>
+    public ThemeRegistration Register(Control root, Action<ThemeRegistration>? configure = null)
+    {
+        var registration = Prepare(root, configure);
+        registration.Activate();
+        return registration;
+    }
+
+    internal void ForgetRegistration(ThemeRegistration registration) => registrations.Remove(registration);
+
+    internal Dictionary<Control, ThemeControlDefaults> CaptureDefaults(Control root)
+    {
+        VerifyThread();
+        var reachable = new HashSet<Control>();
+        Discover(root, reachable, new HashSet<ToolStripDropDownItem>());
+        return reachable.ToDictionary(control => control, control =>
+            controls.TryGetValue(control, out var state) ? state.Defaults : new ThemeControlDefaults(control));
+    }
+
+    public IDisposable Attach(Control root) => Attach(root, null);
+
+    internal IDisposable Attach(Control root, IReadOnlyDictionary<Control, ThemeControlDefaults>? defaults)
     {
         VerifyThread();
         ArgumentNullException.ThrowIfNull(root);
@@ -100,15 +149,29 @@ public sealed class ThemeManager : IDisposable
         roots[root] = roots.GetValueOrDefault(root) + 1;
         try
         {
-            Reconcile();
+            Reconcile(defaults);
         }
-        catch
+        catch (Exception error)
         {
-            if (--roots[root] == 0)
+            if (roots.TryGetValue(root, out int count))
             {
-                roots.Remove(root);
+                if (count <= 1)
+                {
+                    roots.Remove(root);
+                }
+                else
+                {
+                    roots[root] = count - 1;
+                }
             }
-
+            try
+            {
+                Reconcile();
+            }
+            catch (Exception cleanup)
+            {
+                throw new AggregateException("Theme attachment and rollback failed.", error, cleanup);
+            }
             throw;
         }
         return new Registration(() => Detach(root));
@@ -182,7 +245,22 @@ public sealed class ThemeManager : IDisposable
         }
 
         adapters.Add(adapter);
-        Refresh();
+        try
+        {
+            Refresh();
+        }
+        catch (Exception error)
+        {
+            try
+            {
+                RemoveAdapter(adapter);
+            }
+            catch (Exception cleanup)
+            {
+                throw new AggregateException("Adapter attachment and rollback failed.", error, cleanup);
+            }
+            throw;
+        }
         return new Registration(() =>
         {
             if (disposed)
@@ -191,19 +269,32 @@ public sealed class ThemeManager : IDisposable
             }
 
             VerifyThread();
-            if (!adapters.Remove(adapter))
-            {
-                return;
-            }
+            RemoveAdapter(adapter);
+        });
+    }
 
-            foreach (Control control in controls.Keys.ToArray())
+    private void RemoveAdapter(IThemeAdapter adapter)
+    {
+        if (!adapters.Remove(adapter))
+        {
+            return;
+        }
+        var errors = new List<Exception>();
+        foreach (Control control in controls.Keys.ToArray())
+        {
+            TryCleanup(() =>
+            {
                 if (!control.IsDisposed && adapter.CanHandle(control))
                 {
                     adapter.Detach(control);
                 }
-
-            Refresh();
-        });
+            }, errors);
+        }
+        TryCleanup(Refresh, errors);
+        if (errors.Count > 0)
+        {
+            throw new AggregateException("Adapter cleanup failed.", errors);
+        }
     }
 
     public IDisposable AttachToolTip(ToolTip toolTip)
@@ -383,7 +474,7 @@ public sealed class ThemeManager : IDisposable
         }
     }
 
-    private void Reconcile()
+    private void Reconcile(IReadOnlyDictionary<Control, ThemeControlDefaults>? defaults = null)
     {
         if (applying || reconciling)
         {
@@ -406,7 +497,9 @@ public sealed class ThemeManager : IDisposable
                     continue;
                 }
 
-                var state = new ControlThemeState(control);
+                ThemeControlDefaults? captured = null;
+                defaults?.TryGetValue(control, out captured);
+                var state = new ControlThemeState(control, captured);
                 controls.Add(control, state);
                 added.Add(state);
                 Subscribe(control);
@@ -697,9 +790,23 @@ public sealed class ThemeManager : IDisposable
         }
     }
 
-    private void VerifyThread()
+    internal void VerifyRegistrationActivation()
+    {
+        VerifyThread();
+        if (applying || reconciling)
+        {
+            throw new InvalidOperationException("Activate registrations outside theme callbacks; post to the UI thread when needed.");
+        }
+    }
+
+    internal void VerifyThread()
     {
         ObjectDisposedException.ThrowIf(disposed, this);
+        VerifyAccess();
+    }
+
+    internal void VerifyAccess()
+    {
         if (Environment.CurrentManagedThreadId != uiThread)
         {
             throw new InvalidOperationException("Use ThemeManager on its owning UI thread.");
@@ -718,6 +825,11 @@ public sealed class ThemeManager : IDisposable
         var errors = new List<Exception>();
         try
         {
+            foreach (var registration in registrations.ToArray())
+            {
+                TryCleanup(registration.Dispose, errors);
+            }
+            registrations.Clear();
             SystemEvents.UserPreferenceChanged -= WindowsPreferencesChanged;
             foreach (var item in menuOpenHandlers)
                 item.Key.DropDownOpening -= item.Value;

@@ -21,7 +21,7 @@ $consumer = Join-Path $PSScriptRoot 'ConsumerSmoke\bin\Release\net10.0-windows\H
 Invoke-DotNet -Arguments @($checks, 'lifecycle')
 foreach ($startupMode in @('--light', '--dark'))
 {
-    foreach ($scenario in @('progress', 'visibility', 'startup', 'controls'))
+    foreach ($scenario in @('progress', 'visibility', 'startup', 'controls', 'setup'))
     {
         Invoke-DotNet -Arguments @($checks, $scenario, $startupMode)
     }

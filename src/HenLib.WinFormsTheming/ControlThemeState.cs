@@ -1,17 +1,15 @@
-using System.ComponentModel;
 using System.Drawing;
 
 namespace HenLib.WinFormsTheming;
 
-internal sealed class ControlThemeState(Control control)
+internal sealed class ControlThemeState(Control control, ThemeControlDefaults? captured)
 {
     internal Control Control { get; } = control;
-    private readonly Color originalBack = control.BackColor;
-    private readonly Color originalFore = control.ForeColor;
-    internal bool ExplicitBack { get; } = TypeDescriptor.GetProperties(control)["BackColor"]!.ShouldSerializeValue(control);
-    internal bool ExplicitFore { get; } = TypeDescriptor.GetProperties(control)["ForeColor"]!.ShouldSerializeValue(control);
-    private readonly bool originalTabBackground = control is TabPage page && page.UseVisualStyleBackColor;
-    private readonly FlatStyle? originalButtonStyle = (control as ButtonBase)?.FlatStyle;
+    internal ThemeControlDefaults Defaults { get; } = captured ?? new ThemeControlDefaults(control);
+    internal bool ExplicitBack => Defaults.HasExplicitBackColor;
+    internal bool ExplicitFore => Defaults.HasExplicitForeColor;
+    private bool originalTabBackground => Defaults.UseVisualStyleBackColor == true;
+    private FlatStyle? originalButtonStyle => Defaults.ButtonStyle;
     private bool wasHighContrast;
     private bool usingNativeButtonStyle;
     internal bool? LastNativeDark
@@ -184,28 +182,7 @@ internal sealed class ControlThemeState(Control control)
         RestoreForeground();
     }
 
-    internal void RestoreBackground()
-    {
-        if (ExplicitBack)
-        {
-            Control.BackColor = originalBack;
-        }
-        else
-        {
-            Control.ResetBackColor();
-        }
+    internal void RestoreBackground() => Defaults.RestoreBackground(Control);
 
-    }
-
-    internal void RestoreForeground()
-    {
-        if (ExplicitFore)
-        {
-            Control.ForeColor = originalFore;
-        }
-        else
-        {
-            Control.ResetForeColor();
-        }
-    }
+    internal void RestoreForeground() => Defaults.RestoreForeground(Control);
 }
