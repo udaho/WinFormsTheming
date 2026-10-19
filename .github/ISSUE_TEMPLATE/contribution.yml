@@ -13,9 +13,13 @@ body:
     attributes:
       label: Generative AI assistance disclosure
       description: >-
-        State "AI assistance: None", or list EVERY provider/model used, including
-        tool/product, full model name/identifier, model family, version number,
-        variant/build, scope, and human review. Explain any "Unknown / not exposed"
-        fields. Include planning, writing, and review assistance. See CONTRIBUTING.md.
+        State "AI assistance: None", or give Provider, Tool/product, and
+        Model/version for each provider/model used. These three fields are sufficient.
+        See CONTRIBUTING.md.
+      placeholder: |
+        AI assistance disclosure:
+        Provider: OpenAI
+        Tool/product: Codex
+        Model/version: GPT-6.1 Sol
     validations:
       required: true

@@ -183,14 +183,9 @@ src/HenLib.WinFormsTheming/HenLib.WinFormsTheming.csproj -c Release`.
 ## Origin and AI assistance
 
 The original implementation was developed by a human prompting **OpenAI GPT-6.1 Sol**.
-The maintainer supplied this original-implementation attribution:
 
-| Provider | Model | Model family | Version | Variant |
-| --- | --- | --- | --- | --- |
-| OpenAI | GPT-6.1 Sol | GPT-6 | 6.1 | Sol |
-
-Human direction, review, and verification remain essential. All contributions must
-disclose every use of generative AI, including provider, model, family, and version/variant.
+All contributions must disclose generative AI assistance. Provider, tool/product,
+and model/version are sufficient; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 [↑ Top](#top)
 

@@ -2,7 +2,7 @@
 
 # Pull request
 
-**TLDR:** <!-- Summarize the change. Complete the AI assistance disclosure below. -->
+**TLDR:** <!-- Summarize the change. -->
 
 **Table of contents**
 
@@ -24,20 +24,17 @@
 
 ## AI assistance
 
-<!-- Reference commits containing complete disclosures, OR fill the block below.
-Commit messages alone are sufficient; do not duplicate them unnecessarily.
-State "AI assistance: None" only if none was used. Otherwise list EVERY provider/model,
-including subagents; explain "Unknown / not exposed" fields. See CONTRIBUTING.md. -->
+<!-- Reference disclosed commits, OR fill the three-field block below for each
+provider/model used. Commit messages alone are sufficient. If none was used,
+state "AI assistance: None". See CONTRIBUTING.md. -->
 
 Disclosed commits (if used instead of the block below):
 
-- Provider:
-- Tool/product:
-- Model name/exact identifier:
-- Model family:
-- Version number:
-- Variant/build/snapshot:
-- Tasks and affected content:
-- Human review/validation:
+```yaml
+AI assistance disclosure:
+Provider:
+Tool/product:
+Model/version:
+```
 
 [↑ Top](#top)

@@ -152,19 +152,16 @@ For new control support or changes to drawing, refresh, or lifecycle:
 
 ## AI disclosure policy
 
-- Follow [CONTRIBUTING.md](CONTRIBUTING.md) for every contribution, including docs,
-  tests, reviews, commit messages, and work performed through agents/subagents.
-- Disclose all generative AI use and every provider/model: tool/product, full model
-  name/identifier, model family, version number, variant/build, scope of assistance,
-  and human review/validation. Never assume assistance is exempt because it was minor.
-- State `AI assistance: None` only when no generative AI was used. Do not falsely
-  claim unaided authorship, guess model metadata, or hide additional models/tools.
-  Explicitly mark unavailable fields `Unknown / not exposed` with an explanation.
-- Commit-message disclosure is sufficient for code, docs, and tests. Do not require
-  inline source/test comments or banners. PRs may reference the disclosed commits;
-  preserve disclosures when squashing. Issue/review submissions without commits
-  carry their own disclosures. Correct incomplete/misleading disclosures before acceptance.
-- Preserve the README's maintainer-supplied original implementation credit to
-  human prompting of OpenAI GPT-6.1 Sol. MIT licensing remains unchanged.
+- Follow [CONTRIBUTING.md](CONTRIBUTING.md) for all generative AI assistance,
+  including docs, tests, reviews, and agents/subagents.
+- For each provider/model, the required disclosure is just `Provider`, `Tool/product`,
+  and `Model/version` (for example, `GPT-6.1 Sol`). These three fields are sufficient.
+- Give the actual model/version; use `Unknown / not exposed` if unavailable.
+  State `AI assistance: None` only when none was used.
+- Commit-message disclosure is sufficient; source/test banners are not required.
+  PRs may reference disclosed commits. Preserve disclosures when squashing; issues
+  and reviews without commits carry their own disclosure.
+- Preserve the original implementation credit to human prompting of OpenAI
+  GPT-6.1 Sol. MIT licensing remains unchanged.
 
 [↑ Top](#top)
