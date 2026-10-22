@@ -1,4 +1,4 @@
-param([switch]$SkipPackage)
+param([switch]$SkipPackage, [switch]$Interactive, [switch]$IsolatedChild)
 
 $ErrorActionPreference = 'Stop'
 $solutionRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
@@ -15,13 +15,27 @@ function Invoke-DotNet
     }
 }
 
+if (-not $Interactive -and -not $IsolatedChild)
+{
+    $verificationProject = Join-Path $PSScriptRoot 'Automated\HenLib.WinFormsTheming.Verification.csproj'
+    Invoke-DotNet -Arguments @('build', $verificationProject, '-c', $configuration, '--nologo')
+    $launcher = Join-Path $PSScriptRoot 'Automated\bin\Release\net10.0-windows\HenLib.WinFormsTheming.Verification.dll'
+    $launchArguments = @($launcher, 'isolated', $PSCommandPath)
+    if ($SkipPackage)
+    {
+        $launchArguments += '--skip-package'
+    }
+    Invoke-DotNet -Arguments $launchArguments
+    exit 0
+}
+
 Invoke-DotNet -Arguments @('build', (Join-Path $solutionRoot 'HenLib.WinFormsTheming.sln'), '-c', $configuration, '--nologo')
 $checks = Join-Path $PSScriptRoot 'Automated\bin\Release\net10.0-windows\HenLib.WinFormsTheming.Verification.dll'
 $consumer = Join-Path $PSScriptRoot 'ConsumerSmoke\bin\Release\net10.0-windows\HenLib.WinFormsTheming.ConsumerSmoke.dll'
 Invoke-DotNet -Arguments @($checks, 'lifecycle')
 foreach ($startupMode in @('--light', '--dark'))
 {
-    foreach ($scenario in @('progress', 'visibility', 'startup', 'controls', 'setup'))
+    foreach ($scenario in @('progress', 'visibility', 'startup', 'controls', 'setup', 'colors', 'disabled'))
     {
         Invoke-DotNet -Arguments @($checks, $scenario, $startupMode)
     }

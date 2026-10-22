@@ -16,6 +16,7 @@ switching, and lifecycle. Keep verification source; discard generated evidence.
 - [Project contract](#project-contract)
 - [Implementation map](#implementation-map)
 - [Lessons and gotchas](#lessons-and-gotchas)
+- [Exception handling](#exception-handling)
 - [Verification policy](#verification-policy)
 - [Working conventions](#working-conventions)
 - [AI disclosure policy](#ai-disclosure-policy)
@@ -51,6 +52,7 @@ Under `src/HenLib.WinFormsTheming/`:
 | `ControlThemeState.cs` | Original properties, color ownership/restoration, button/tab policy. |
 | `NativeControlRenderer.cs` | HWND theming, child windows, cached button painters, redraw. |
 | `ProgressBarAnimationController.cs`, `ThemedProgressBarWindow.cs` | Shared UI timer; painting over existing progress HWNDs. |
+| `ThemedDisabledTextBoxWindow.cs` | Contrast-aware disabled native edit text; no enabled/content/layout changes. |
 | `ThemedToolTipRegistration.cs`, `ThemeMessageBox.cs` | Tooltip lifecycle and confirmations. |
 
 Use public palette/binding/adapter extension points. Keep application-specific
@@ -68,6 +70,10 @@ styling in the consuming application.
 - `SystemColors` identity can stay equal while ARGB changes. Preserve pinned-ARGB
   refresh of inherited brushes. Set TabPage `UseVisualStyleBackColor` after BackColor,
   whose setter can clear it.
+- Explicit system backgrounds also cache native brushes. Refresh through RGB and
+  restore the current symbolic color; preserve inheritance and application callbacks.
+  Keep this before the final TabPage background policy. Verify native pixels, not
+  just Color equality; system-color tokens can compare equal across modes.
 - Button painters cache theme state, including before late attachment. Refresh may
   recreate HWNDs; preserve styles, images, sizing, and focus. `NativeTextButtons`
   stays opt-in because appearance/layout differ.
@@ -86,8 +92,30 @@ styling in the consuming application.
 - Visibility events can precede HWND visibility. Keep deferred animation checks after
   show/restore. Require motion without clicks or forced repaint; snapshots and
   `DrawToBitmap` can conceal missing repaint triggers.
+- Disabled EDIT ignores ForeColor. Its native GrayText comes from GetSysColor(17),
+  not .NET Dark SystemColors.GrayText. Preserve native shaping/password masking by
+  recoloring a native client-render mask; never toggle Enabled or replace the text.
+  The temporary parent paint subclass/brush must be removed after each capture.
+  Light/high contrast bypass this rendering. Restrict it to stock TextBox/MaskedTextBox;
+  derived/custom controls and RichTextBox remain application-owned.
 - Mixed RichTextBox content stays application-owned; binding foreground recolors text.
   Preserve tooltip titles/icons, custom owner drawing, and original properties.
+
+[↑ Top](#top)
+
+## Exception handling
+
+- Propagate unexpected managed exceptions, including host callbacks/adapters. Use
+  `throw;` to retain the stack. Queued failures reach the host's UI exception handling.
+- Roll back setup resources before rethrowing. Attempt remaining cleanup; if cleanup
+  also fails, retain the original and cleanup failures in `AggregateException`.
+  Theme changes are not transactional; do not promise complete UI rollback.
+- Catch-and-fallback requires an explicit, narrow contract. The read-only
+  `IsWindowsAppThemeDark` probe resolves missing/unrecognized preferences or expected
+  security/access/I/O failures to Light, logs full exceptions, and preserves System
+  as the requested mode. Keep theme-changing operations outside that catch.
+- Keep filtered disposal/handle-teardown races narrowly guarded. Native return-code
+  failures use the documented `Diagnostic` policy; subscriber exceptions propagate.
 
 [↑ Top](#top)
 
@@ -113,6 +141,11 @@ For new control support or changes to drawing, refresh, or lifecycle:
 | Resources | No handler/timer growth or retained registrations; restored originals; inspect `Diagnostic` failures and actual drawing. |
 | Animation | Passive startup, hide/show/minimize/restore without input/forced painting; pause/resume/suppressed motion. Static frames do not establish animation. |
 
+- Run automated checks through `verification/Verify.ps1`, which defaults to an
+  isolated, non-visible desktop. Never use `-Interactive`, launch visible fixtures,
+  or steal desktop focus without the user explicitly requesting visible testing.
+- The gallery-only SplitContainer paints its splitter through a display DC and
+  can fail on inactive desktops; native-scroll regressions omit that untested sample.
 - Manually inspect native painting: contrast, borders, hover/pressed/disabled states,
   clipping, flicker, motion. Control focus during comparisons; user activity changes
   selection/focus appearance. `DrawToBitmap` is supplementary.

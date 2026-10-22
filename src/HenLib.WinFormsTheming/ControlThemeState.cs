@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Drawing;
 
 namespace HenLib.WinFormsTheming;
@@ -12,6 +13,10 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
     private FlatStyle? originalButtonStyle => Defaults.ButtonStyle;
     private bool wasHighContrast;
     private bool usingNativeButtonStyle;
+    private ThemedDisabledTextBoxWindow? disabledTextBox;
+    private Color refreshedSystemBackground;
+    private int refreshedSystemBackgroundArgb;
+    private nint refreshedSystemBackgroundHandle;
     internal bool? LastNativeDark
     {
         get; set;
@@ -150,11 +155,66 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
                 }
             }
         }
+        RefreshSystemBackground();
         // BackColor setters can themselves clear this flag, so apply the saved policy last.
         if (Control is TabPage page)
         {
             page.UseVisualStyleBackColor = dark ? false : originalTabBackground;
         }
+    }
+
+    private void RefreshSystemBackground()
+    {
+        Color background = Control.BackColor;
+        if (!background.IsSystemColor || !Control.IsHandleCreated)
+        {
+            return;
+        }
+        int argb = background.ToArgb();
+        nint handle = Control.Handle;
+        if (background == refreshedSystemBackground && argb == refreshedSystemBackgroundArgb &&
+            handle == refreshedSystemBackgroundHandle)
+        {
+            return;
+        }
+        var property = TypeDescriptor.GetProperties(Control)[nameof(Control.BackColor)]!;
+        if (!property.ShouldSerializeValue(Control))
+        {
+            return;
+        }
+
+        // System colors retain their identity when their RGB value changes. Passing
+        // through RGB clears WinForms' cached native brush; restore the symbolic color
+        // so later mode changes and application assignments keep their normal meaning.
+        refreshedSystemBackground = background;
+        refreshedSystemBackgroundArgb = argb;
+        refreshedSystemBackgroundHandle = handle;
+        Color resolved = Color.FromArgb(argb);
+        Control.BackColor = resolved;
+        if (!Control.IsDisposed && !Control.Disposing && Control.BackColor == resolved)
+        {
+            Control.BackColor = background;
+        }
+    }
+
+    internal void RefreshDisabledText(ThemeContext context, ThemePalette palette)
+    {
+        if (Control.IsDisposed || Control.Disposing)
+        {
+            return;
+        }
+        Type type = Control.GetType();
+        if (type == typeof(TextBox) || type == typeof(MaskedTextBox))
+        {
+            disabledTextBox ??= new ThemedDisabledTextBoxWindow((TextBoxBase)Control);
+            disabledTextBox.Refresh(context, palette);
+        }
+    }
+
+    internal void DisposeDisabledText()
+    {
+        disabledTextBox?.Dispose();
+        disabledTextBox = null;
     }
 
     internal void Restore()

@@ -8,7 +8,7 @@ internal sealed class CommonControlsForm : Form
     {
         get;
     }
-    internal CommonControlsForm(ThemeManager manager)
+    internal CommonControlsForm(ThemeManager manager, bool includeSplitContainer = true)
     {
         Text = "Common WinForms controls — includes known theming gaps";
         Size = new Size(1220, 940);
@@ -68,7 +68,13 @@ internal sealed class CommonControlsForm : Form
         tabs.TabPages.Add("First");
         tabs.TabPages.Add("Second");
         Add(tabs);
-        Add(new SplitContainer { Orientation = Orientation.Vertical });
+        if (includeSplitContainer)
+        {
+            // The gallery includes this for human inspection. Its direct splitter
+            // painting can fail on an inactive desktop; automated native-scroll checks
+            // do not exercise it and omit it from their host.
+            Add(new SplitContainer { Orientation = Orientation.Vertical });
+        }
         Add(new PictureBox());
         var grid = new DataGridView { AllowUserToAddRows = false, RowHeadersVisible = false };
         grid.Columns.Add("First", "First");

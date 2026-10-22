@@ -7,7 +7,7 @@ internal static class CommonControlChecks
         ApplicationConfiguration.Initialize();
         ThemeMode startup = args.Contains("--dark") ? ThemeMode.Dark : ThemeMode.Light;
         using var manager = new ThemeManager(startup);
-        using var form = new CommonControlsForm(manager);
+        using var form = new CommonControlsForm(manager, includeSplitContainer: false);
         using var registration = manager.Attach(form);
         var log = new CheckLog("Native controls " + startup);
         Control[] samples = form.Samples.Where(control => control is TrackBar or ScrollBar or ListBox).ToArray();

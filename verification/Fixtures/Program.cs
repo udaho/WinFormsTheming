@@ -19,6 +19,14 @@ internal static class Program
         {
             form = new SetupFixtureForm(manager);
         }
+        else if (args.Contains("--disabled"))
+        {
+            form = new DisabledTextFixtureForm(manager);
+        }
+        else if (args.Contains("--colors"))
+        {
+            form = new SystemColorFixtureForm(manager);
+        }
         else if (args.Contains("--gallery"))
         {
             form = new CommonControlsForm(manager);

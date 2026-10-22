@@ -19,6 +19,7 @@ Applications own their saved preferences and business-state colors.
   - [Application wiring](#application-wiring)
 - [Customization](#customization)
 - [Limits](#limits)
+- [Exception handling](#exception-handling)
 - [Verification](#verification)
 - [Origin and AI assistance](#origin-and-ai-assistance)
 - [Contributing](#contributing)
@@ -156,7 +157,12 @@ High contrast also disables native Dark and takes precedence over custom palette
 
 Theme changes visit registered controls and can recreate managed button handles.
 Do not mix direct `Application.SetColorMode` calls with the manager. Explicit colors
-are preserved outside high contrast; mixed RichTextBox content stays application-owned.
+are preserved outside high contrast; system-color backgrounds refresh without losing
+their symbolic values or inheritance. Mixed RichTextBox content stays application-owned.
+In Dark mode, disabled standard TextBox/MaskedTextBox text uses a readable disabled shade
+(at least 4.5:1 against its background), preserving native layout, masking, scrolling,
+and enabled state. Light/high contrast retain native rendering. RichTextBox formatting
+and derived/custom controls remain application-owned.
 Managed message-box captions are English; native file/folder dialogs use Windows drawing.
 
 | Needs dedicated handling | Gap |
@@ -168,6 +174,35 @@ Managed message-box captions are English; native file/folder dialogs use Windows
 
 Custom/owner-drawn controls, actual Windows contrast themes, and monitor/DPI changes
 need consumer acceptance. Observe native API failures through `Diagnostic`.
+
+[↑ Top](#top)
+
+## Exception handling
+
+Unexpected managed exceptions propagate to the caller, or to the host's UI-thread
+exception handling for queued work. Invalid arguments, wrong-thread use, disposed
+objects, and failures from palette factories, adapters, or event handlers are not
+converted into success. A failed theme operation can leave partially updated UI;
+`SetMode` and `Refresh` are not transactional.
+
+Failed setup attempts cleanup before rethrowing. When cleanup also fails, both the
+original and cleanup errors are retained in `AggregateException`; disposal attempts
+remaining releases and reports collected failures.
+
+Two narrow recovery cases are intentional:
+
+- The private `IsWindowsAppThemeDark` probe only reads Windows' **app** preference
+  (`AppsUseLightTheme`). Missing/unrecognized values or expected security, access,
+  and I/O failures resolve to Light in System Mode. The requested System preference
+  is retained. The probe logs caught exceptions with `ToString()` and does not
+  change Windows settings, controls, or WinForms color mode; unexpected exceptions
+  still propagate.
+- Deferred refresh/animation checks can become unnecessary during disposal or
+  handle teardown. Only the filtered exceptions for those lifecycle races are ignored.
+
+Native failures reported through `Diagnostic` are return-code failures, not swallowed
+managed exceptions. Rendering continues as a best-effort operation. Subscribe through
+`OnDiagnostic`/`Diagnostic` to record them; exceptions thrown by subscribers propagate.
 
 [↑ Top](#top)
 

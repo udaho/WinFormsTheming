@@ -64,11 +64,16 @@ public sealed class ThemeManager : IDisposable
             }
             SystemEvents.UserPreferenceChanged += WindowsPreferencesChanged;
         }
-        catch
+        catch (Exception error)
         {
-            progressBars?.Dispose();
-            dispatcher?.Dispose();
+            var errors = new List<Exception> { error };
+            TryCleanup(() => progressBars?.Dispose(), errors);
+            TryCleanup(() => dispatcher?.Dispose(), errors);
             Interlocked.CompareExchange(ref activeManager, null, this);
+            if (errors.Count > 1)
+            {
+                throw new AggregateException("Theme manager initialization and cleanup failed.", errors);
+            }
             throw;
         }
     }
@@ -413,7 +418,7 @@ public sealed class ThemeManager : IDisposable
         bool highContrast = SystemInformation.HighContrast;
         bool supportsDark = OperatingSystem.IsWindowsVersionAtLeast(10, 0, 22000);
         bool dark = !highContrast && supportsDark && (RequestedMode == ThemeMode.Dark ||
-            RequestedMode == ThemeMode.System && ReadWindowsDarkMode());
+            RequestedMode == ThemeMode.System && IsWindowsAppThemeDark());
         SystemColorMode desired = dark ? SystemColorMode.Dark : SystemColorMode.Classic;
         if (nativeMode != desired)
         {
@@ -433,7 +438,12 @@ public sealed class ThemeManager : IDisposable
         progressBars?.RefreshPolicy();
     }
 
-    private static bool ReadWindowsDarkMode()
+    /// <summary>
+    /// Probe the current user's Windows app-theme preference without changing theming.
+    /// Missing/unrecognized values and expected access/security/I/O failures return false,
+    /// so System Mode falls back to Light. Unexpected exceptions still propagate.
+    /// </summary>
+    private static bool IsWindowsAppThemeDark()
     {
         try
         {
@@ -681,6 +691,7 @@ public sealed class ThemeManager : IDisposable
 
         bindings.TryGetValue(control, out var binding);
         state.Apply(Context, Palette, options, binding?.Background, binding?.Foreground);
+        state.RefreshDisabledText(Context, Palette);
         if (control.IsHandleCreated)
         {
             bool progressTheme = state.LastNativeDark != Context.IsDark || state.LastNativeHandle != control.Handle;
@@ -819,6 +830,7 @@ public sealed class ThemeManager : IDisposable
         }
         bindings.Remove(control);
         var errors = new List<Exception>();
+        TryCleanup(state.DisposeDisabledText, errors);
         if (control is ProgressBar progress)
         {
             TryCleanup(() => progressBars?.Detach(progress), errors);

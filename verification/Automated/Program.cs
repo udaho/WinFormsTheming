@@ -5,6 +5,10 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        if (args.FirstOrDefault() == "isolated")
+        {
+            return IsolatedDesktopRunner.Run(args.Skip(1).ToArray());
+        }
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.ThrowException);
         if (SystemInformation.HighContrast)
         {
@@ -21,6 +25,8 @@ internal static class Program
                 "setup" => SetupChecks.Run(args),
                 "lifecycle" => LifecycleChecks.Run(),
                 "controls" => CommonControlChecks.Run(args),
+                "colors" => SystemColorChecks.Run(args),
+                "disabled" => DisabledTextChecks.Run(args),
                 _ => Usage()
             };
         }
@@ -33,7 +39,7 @@ internal static class Program
 
     private static int Usage()
     {
-        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls | setup");
+        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls | setup | colors | disabled");
         Console.WriteLine("Options: --dark; progress also accepts --no-motion or --native.");
         return 2;
     }
