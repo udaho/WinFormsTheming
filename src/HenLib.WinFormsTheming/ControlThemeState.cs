@@ -30,6 +30,24 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
         ThemeColorRole? background, ThemeColorRole? foreground)
     {
         bool dark = context.IsDark && !context.IsHighContrast;
+        // UpDownBase owns the colors exposed by its internal edit and buttons.
+        // Applying textbox defaults again would overwrite spinner bindings/colors.
+        if (IsFrameworkSpinnerChild(Control))
+        {
+            if (!context.IsHighContrast)
+            {
+                if (background is ThemeColorRole childBack)
+                {
+                    Control.BackColor = palette[childBack];
+                }
+                if (foreground is ThemeColorRole childFore)
+                {
+                    Control.ForeColor = palette[childFore];
+                }
+            }
+            RefreshSystemBackground();
+            return;
+        }
         if (wasHighContrast && !context.IsHighContrast)
         {
             RestoreColors();
@@ -54,9 +72,9 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
 
         if (context.IsHighContrast)
         {
-            Control.BackColor = Control is TextBoxBase or ComboBox or ListView or TreeView
+            Control.BackColor = Control is TextBoxBase or UpDownBase or ComboBox or ListView or TreeView
                 ? SystemColors.Window : SystemColors.Control;
-            Control.ForeColor = Control is TextBoxBase or ComboBox or ListView or TreeView
+            Control.ForeColor = Control is TextBoxBase or UpDownBase or ComboBox or ListView or TreeView
                 ? SystemColors.WindowText : SystemColors.ControlText;
         }
         else if (background is ThemeColorRole backRole)
@@ -75,6 +93,17 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
                     else
                     {
                         text.ResetBackColor();
+                    }
+
+                    break;
+                case UpDownBase:
+                    if (dark || palette.Input != SystemColors.Window)
+                    {
+                        Control.BackColor = palette.Input;
+                    }
+                    else
+                    {
+                        Control.ResetBackColor();
                     }
 
                     break;
@@ -204,11 +233,21 @@ internal sealed class ControlThemeState(Control control, ThemeControlDefaults? c
             return;
         }
         Type type = Control.GetType();
-        if (type == typeof(TextBox) || type == typeof(MaskedTextBox))
+        bool spinnerEdit = Control is TextBox && IsFrameworkSpinnerChild(Control);
+        if (type == typeof(TextBox) || type == typeof(MaskedTextBox) || spinnerEdit)
         {
             disabledTextBox ??= new ThemedDisabledTextBoxWindow((TextBoxBase)Control);
             disabledTextBox.Refresh(context, palette);
         }
+    }
+
+    internal static bool IsFrameworkSpinnerChild(Control control)
+    {
+        Type type = control.GetType();
+        Type? parent = control.Parent?.GetType();
+        bool stockParent = parent == typeof(NumericUpDown) || parent == typeof(DomainUpDown);
+        bool frameworkChild = type.Assembly == typeof(UpDownBase).Assembly && type.DeclaringType == typeof(UpDownBase);
+        return stockParent && frameworkChild;
     }
 
     internal void DisposeDisabledText()

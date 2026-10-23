@@ -96,8 +96,14 @@ styling in the consuming application.
   not .NET Dark SystemColors.GrayText. Preserve native shaping/password masking by
   recoloring a native client-render mask; never toggle Enabled or replace the text.
   The temporary parent paint subclass/brush must be removed after each capture.
-  Light/high contrast bypass this rendering. Restrict it to stock TextBox/MaskedTextBox;
-  derived/custom controls and RichTextBox remain application-owned.
+  Light/high contrast bypass this rendering. Restrict it to stock TextBox/MaskedTextBox
+  and framework editors inside stock NumericUpDown/DomainUpDown; derived/custom
+  controls and RichTextBox remain application-owned.
+- UpDownBase forwards colors to its internal editor. Apply defaults/bindings through
+  the spinner, without reapplying textbox defaults to its framework children. Refresh
+  native themes on the spinner and arrow child; otherwise Dark-start arrows can stay
+  stale in Light. Releasing/replacing a direct editor binding must reapply the
+  owner's active color policy. ReadOnly prevents typing but keeps arrows functional.
 - Mixed RichTextBox content stays application-owned; binding foreground recolors text.
   Preserve tooltip titles/icons, custom owner drawing, and original properties.
 

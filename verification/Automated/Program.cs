@@ -27,6 +27,7 @@ internal static class Program
                 "controls" => CommonControlChecks.Run(args),
                 "colors" => SystemColorChecks.Run(args),
                 "disabled" => DisabledTextChecks.Run(args),
+                "spinners" => SpinnerChecks.Run(args),
                 _ => Usage()
             };
         }
@@ -39,7 +40,7 @@ internal static class Program
 
     private static int Usage()
     {
-        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls | setup | colors | disabled");
+        Console.WriteLine("Scenarios: progress | visibility | startup | lifecycle | controls | setup | colors | disabled | spinners");
         Console.WriteLine("Options: --dark; progress also accepts --no-motion or --native.");
         return 2;
     }

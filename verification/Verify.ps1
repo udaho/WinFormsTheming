@@ -41,6 +41,22 @@ foreach ($startupMode in @('--light', '--dark'))
     }
     Invoke-DotNet -Arguments @($consumer, $startupMode)
 }
+# Share only temporary render references between fresh startup processes.
+$spinnerBaseline = Join-Path ([IO.Path]::GetTempPath()) ('HenLib-Spinners-' + [Guid]::NewGuid().ToString('N') + '.json')
+try
+{
+    foreach ($startupMode in @('--light', '--dark'))
+    {
+        Invoke-DotNet -Arguments @($checks, 'spinners', $startupMode, '--baseline', $spinnerBaseline)
+    }
+}
+finally
+{
+    if (Test-Path -LiteralPath $spinnerBaseline)
+    {
+        Remove-Item -LiteralPath $spinnerBaseline
+    }
+}
 Invoke-DotNet -Arguments @($checks, 'progress', '--no-motion')
 Invoke-DotNet -Arguments @($checks, 'progress', '--native')
 

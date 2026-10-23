@@ -207,6 +207,7 @@ public sealed class ThemeManager : IDisposable
         }
 
         var binding = new ColorBinding(background, foreground);
+        bool restoredColors = false;
         // A replacement can release one of the previously bound properties.
         // Restore its designer/default value before applying the new roles.
         if (bindings.TryGetValue(control, out var previous))
@@ -214,13 +215,19 @@ public sealed class ThemeManager : IDisposable
             if (previous.Background.HasValue && !background.HasValue)
             {
                 controls[control].RestoreBackground();
+                restoredColors = true;
             }
             if (previous.Foreground.HasValue && !foreground.HasValue)
             {
                 controls[control].RestoreForeground();
+                restoredColors = true;
             }
         }
         bindings[control] = binding;
+        if (restoredColors)
+        {
+            RefreshSpinnerOwnerColors(control);
+        }
         ApplyControl(controls[control], refreshPainter: false);
 
         void RemoveBinding()
@@ -247,6 +254,10 @@ public sealed class ThemeManager : IDisposable
                 {
                     state.RestoreForeground();
                 }
+                if (binding.Background.HasValue || binding.Foreground.HasValue)
+                {
+                    RefreshSpinnerOwnerColors(control);
+                }
                 ApplyControl(state, refreshPainter: false);
             }
         }
@@ -254,6 +265,18 @@ public sealed class ThemeManager : IDisposable
         return new Registration(RemoveBinding);
     }
 
+    private void RefreshSpinnerOwnerColors(Control control)
+    {
+        if (control is not TextBox || !ControlThemeState.IsFrameworkSpinnerChild(control) || control.Parent is not Control owner ||
+            owner.IsDisposed || owner.Disposing || !controls.TryGetValue(owner, out var state))
+        {
+            return;
+        }
+        // UpDownBase getters forward to the editor. Resetting an editor binding
+        // therefore also resets the owner's apparent color; recover its active policy.
+        bindings.TryGetValue(owner, out var binding);
+        state.Apply(Context, Palette, options, binding?.Background, binding?.Foreground);
+    }
     public IDisposable AddAdapter(IThemeAdapter adapter)
     {
         VerifyThread();

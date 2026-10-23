@@ -19,6 +19,10 @@ internal static class Program
         {
             form = new SetupFixtureForm(manager);
         }
+        else if (args.Contains("--spinners"))
+        {
+            form = new SpinnerFixtureForm(manager);
+        }
         else if (args.Contains("--disabled"))
         {
             form = new DisabledTextFixtureForm(manager);

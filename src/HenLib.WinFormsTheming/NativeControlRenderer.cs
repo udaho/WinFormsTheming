@@ -72,7 +72,8 @@ internal static class NativeControlRenderer
         {
             Theme(control.Handle, null, dark ? "DarkMode::FileExplorerBannerContainer" : null);
         }
-        else if (control is TextBoxBase or ButtonBase or ListView or TreeView or GroupBox or TrackBar or ScrollBar or ListBox)
+        else if (control is TextBoxBase or UpDownBase or ButtonBase or ListView or TreeView or GroupBox or TrackBar or ScrollBar or ListBox ||
+            ControlThemeState.IsFrameworkSpinnerChild(control))
         {
             Theme(control.Handle, explorer);
         }

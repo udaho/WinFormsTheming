@@ -161,7 +161,9 @@ are preserved outside high contrast; system-color backgrounds refresh without lo
 their symbolic values or inheritance. Mixed RichTextBox content stays application-owned.
 In Dark mode, disabled standard TextBox/MaskedTextBox text uses a readable disabled shade
 (at least 4.5:1 against its background), preserving native layout, masking, scrolling,
-and enabled state. Light/high contrast retain native rendering. RichTextBox formatting
+and enabled state. Stock NumericUpDown/DomainUpDown refresh their editor and arrow
+themes too, including readable disabled text. Read-only spinners retain working arrows.
+Light/high contrast retain native text rendering. RichTextBox formatting
 and derived/custom controls remain application-owned.
 Managed message-box captions are English; native file/folder dialogs use Windows drawing.
 

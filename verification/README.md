@@ -10,6 +10,7 @@ Light/Dark progress fixtures, or `Open-Fixtures.cmd --gallery` for common contro
 `Open-Fixtures.cmd --setup` opens registration/lifecycle fixtures.
 `Open-Fixtures.cmd --colors` opens system-color background fixtures.
 `Open-Fixtures.cmd --disabled` opens disabled native text fixtures.
+`Open-Fixtures.cmd --spinners` opens numeric/domain spinner fixtures.
 All need Windows 11, .NET 10 SDK, and an unlocked interactive desktop.
 
 [↑ Top](#top)
@@ -43,11 +44,15 @@ Start in normal contrast; actual Windows contrast-theme acceptance uses the huma
 | Automated/LifecycleChecks | Bindings, designer colors, tooltip title/icons, cached button painters, simulated contrast policy. |
 | Automated/DisabledTextChecks | Disabled text contrast, native Light/high-contrast bypass, masking/RTL/layout/scrolling, enabled-state preservation, dynamic controls, and drawing-resource cleanup. |
 | Automated/SystemColorChecks | Rendered system-color backgrounds, identity/inheritance, runtime colors, bindings, hidden/dynamic controls, handle recreation, and cleanup. |
+| Automated/SpinnerChecks | Numeric/domain editors, arrows, disabled/read-only states, fresh-start equivalence, colors/bindings, selection/keyboard/accessibility, and lifecycle. |
 | Automated/CommonControlChecks | TrackBar and scrollbar/list-box drawing through repeated transitions. |
 | ConsumerSmoke / PackageConsumer | Independent consumer with 20 switches, focus/selection/scroll preservation, menus, adapters, cleanup, and message-box results; project and package references. |
 
 The package check uses an isolated temporary feed/cache and removes it afterwards.
-Checks use only this library and framework controls. No reports or captures are persisted.
+Checks use only this library and framework controls. Spinner reference pixels are
+exchanged through a temporary file and removed in `finally`; no reports/captures persist.
+Spinner image comparisons allow up to 12/255 RGB levels of native arrow-edge antialiasing;
+editor text/backgrounds, outer borders, and arrow interiors must match exactly.
 Windows motion preferences are respected; disabled motion does not prove animation.
 
 [↑ Top](#top)
@@ -62,7 +67,9 @@ System colors: compare editable/read-only/disabled backgrounds, inherited colors
 fixed colors, and mixed rich text across modes and tabs.
 Disabled text: inspect readability, native borders, password/masked inputs, RTL,
 scrolling, and enable/disable restoration. Actual contrast themes and DPI remain manual.
-Gallery: inspect 28 common controls; it deliberately exposes known coverage gaps.
+Spinners: inspect arrows (normal/hover/pressed/disabled), text, colors, RTL, keyboard
+input, theme round trips, hidden tabs/samples/form restoration, and enable/disable.
+Read-only spinners still allow arrow changes. Gallery: inspect 28 common controls; it deliberately exposes known coverage gaps.
 Also review flicker, hover/pressed/disabled states, native borders, menu navigation,
 Windows theme notifications, contrast themes, and monitor/DPI changes manually.
 
